@@ -87,8 +87,6 @@ export default class UserController {
         const dataUserUpdate = req.body
         const fileProfileImage = req.files?.profile_image
         const id = req.params.id
-
-        
         
         try {
             const [ checkUser ] = await User.getUserById(id)
@@ -99,10 +97,15 @@ export default class UserController {
 
             let profileImage = ''
 
-            if(fileProfileImage === undefined || fileProfileImage === null) {
-                const split = checkUser.profile_image.split('/')
-                const nameProfileImageDb = split[split.length-1]
-                profileImage = nameProfileImageDb
+            if(fileProfileImage === undefined) {
+                if(checkUser.profile_image !== null) {
+                    const split = checkUser.profile_image.split('/')
+                    const nameProfileImageDb = split[split.length-1]  
+                    profileImage = nameProfileImageDb
+                }else {
+                    profileImage = checkUser.profile_image
+                }
+                
             }else {
                 const profileImageSize = fileProfileImage.data.length
                 const ext = path.extname(fileProfileImage.name)
@@ -122,10 +125,16 @@ export default class UserController {
                 fileProfileImage.mv(`./public/images/${profileImage}`, (err) => {
                     if(err) return res.status(500).json({msg: err.message})
                 })
-                
             }
-            console.info(profileImage);
-            const profile_image = `${req.protocol}://${req.get('host')}/images/${profileImage}`
+
+            let profile_image
+
+            if(profileImage !== null) {
+                profile_image = profileImage = `${req.protocol}://${req.get('host')}/images/${profileImage}`
+            }else {
+                profile_image = null
+            }
+
             const response = await User.update(id, dataUserUpdate, profile_image)
             const { rows } = response
             const { affectedRows } = rows

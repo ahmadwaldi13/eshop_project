@@ -41,7 +41,7 @@ export default class User {
             const [ dataUserDb ] = await this.getUserById(id)
 
             username = username !== undefined ? username : dataUserDb.username
-            profile_image = profile_image !== undefined ? profile_image : dataUserDb.profile_image
+            profile_image = profile_image !== undefined || profile_image !== null ? profile_image : dataUserDb.profile_image
             email = email !== undefined ? email : dataUserDb.email
             name = name !== undefined ? name : dataUserDb.name
             
