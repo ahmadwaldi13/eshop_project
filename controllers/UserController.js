@@ -21,9 +21,9 @@ export default class UserController {
         const id = req.params.id
 
         try {
-            const result = await User.getUserById(id)
+            const [ result ] = await User.getUserById(id)
 
-            if(result.length === 0) {
+            if(result === undefined || result === null) {
                 res.status(404).json({
                     msg: 'Data user not found'
                 })
@@ -60,12 +60,20 @@ export default class UserController {
         const id = req.params.id
 
         try {
-            const checkId = await User.getUserById(id)
-            if(checkId.length === 0) {
+            const [ checkUser ] = await User.getUserById(id)
+            if(checkUser === undefined || checkUser === null) {
                 res.status(404).json({
                     msg: 'The User you want to delete doesnt found'
                 })
             }else {
+                const { profile_image } = checkUser
+                if(profile_image !== null) {
+                    const split = profile_image.split('/')
+                    const profileImageName = split[split.length - 1]
+                    const profileImagePath = `./public/images/${profileImageName}`
+                    fs.unlinkSync(profileImagePath)
+                }
+
                 const response = await User.remove(id)
                 const { affectedRows } = response
                 if(affectedRows > 0) {
@@ -90,20 +98,20 @@ export default class UserController {
         
         try {
             const [ checkUser ] = await User.getUserById(id)
-
             if(checkUser === undefined || checkUser === null) return res.status(404).json({
                 msg: 'User not found'
             })
-
-            let profileImage = ''
+            
+            const { profile_image } = checkUser
+            let profileImage
 
             if(fileProfileImage === undefined) {
-                if(checkUser.profile_image !== null) {
-                    const split = checkUser.profile_image.split('/')
-                    const nameProfileImageDb = split[split.length-1]  
-                    profileImage = nameProfileImageDb
+                if(profile_image !== null) {
+                    const split = profile_image.split('/')
+                    const nameProfileImage = split[split.length-1]  
+                    profileImage = nameProfileImage
                 }else {
-                    profileImage = checkUser.profile_image
+                    profileImage = profile_image
                 }
                 
             }else {
@@ -115,10 +123,10 @@ export default class UserController {
                 if(!allowType.includes(ext.toLowerCase())) return res.status(422).json({ msg: 'Invalid profile image'})
                 if(profileImageSize > 5000000) return res.status(422).json({ msg: 'Image must be lass than 5 MB'})
     
-                if(checkUser.profile_image != null || checkUser.profile_image != undefined) {
-                    const split = checkUser.profile_image.split('/')
-                    const nameProfileImageDb = split[split.length-1]
-                    const profileImagePath = `./public/images/${nameProfileImageDb}`
+                if(profile_image != null || profile_image != undefined) {
+                    const split = profile_image.split('/')
+                    const nameProfileImage = split[split.length-1]
+                    const profileImagePath = `./public/images/${nameProfileImage}`
                     fs.unlinkSync(profileImagePath)
                 } 
 
@@ -127,15 +135,14 @@ export default class UserController {
                 })
             }
 
-            let profile_image
-
+            let profileImageUrl
             if(profileImage !== null) {
-                profile_image = profileImage = `${req.protocol}://${req.get('host')}/images/${profileImage}`
+                profileImageUrl = `${req.protocol}://${req.get('host')}/images/${profileImage}`
             }else {
-                profile_image = null
+                profileImageUrl = null
             }
 
-            const response = await User.update(id, dataUserUpdate, profile_image)
+            const response = await User.update(id, dataUserUpdate, profileImageUrl)
             const { rows } = response
             const { affectedRows } = rows
             
